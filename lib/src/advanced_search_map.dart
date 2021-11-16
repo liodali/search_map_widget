@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum DIRECTION {
-  up,
-  down,
-  idle,
-}
+import 'common/utils.dart';
 
 class AdvancedSearchMap extends StatefulWidget {
   final Widget map;
@@ -49,19 +45,25 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
   late ValueNotifier<double> lastY;
   late ValueNotifier<double> diffY;
   late ValueNotifier<DIRECTION> directionNotifier;
-  late ValueNotifier<double> topSearchPosition;
-  late ValueNotifier<double> informationPositionSearch;
-  double maxThresholdHeight = 0.0;
-  double minThresholdHeight = 0.0;
-  double maxTopThresholdHeight = 0.0;
-  double minTopThresholdHeight = 0.0;
+  ValueNotifier<double>? topSearchPosition;
+  ValueNotifier<double>? informationPositionSearch;
+
   late ScrollController _scrollController;
+
+  double get maxThresholdHeight => _maxHeight - (_maxHeight * _maxThreshold);
+
+  double get minThresholdHeight => _maxHeight - (_maxHeight * _minThreshold);
+
+  double get maxTopThresholdHeight => (_maxHeight / _transformThreshold);
+
+  double get minTopThresholdHeight => -(_maxHeight / _transformThreshold);
 
   double get _maxHeight => MediaQuery.of(context).size.height;
 
   double get _transformThreshold => (1 - _maxThreshold) * 10;
 
   double get _alphaThreshold => _transformThreshold > 2 ? 0.0 : 3 - _transformThreshold;
+
   double _maxThreshold = 0.85;
   double _minThreshold = 0.45;
 
@@ -69,8 +71,6 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    topSearchPosition = ValueNotifier(-positionTopSearch);
-    informationPositionSearch = ValueNotifier(positionInformationSearch);
     diffY = ValueNotifier(0.0);
     lastY = ValueNotifier(0.0);
     isDown = ValueNotifier(false);
@@ -82,21 +82,10 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (maxThresholdHeight == 0.0) {
-      maxThresholdHeight = _maxHeight - (_maxHeight * _maxThreshold);
-    }
-    if (minThresholdHeight == 0.0) {
-      minThresholdHeight = _maxHeight - (_maxHeight * _minThreshold);
-      informationPositionSearch = ValueNotifier(minThresholdHeight);
-    }
 
-    if (maxTopThresholdHeight == 0.0) {
-      maxTopThresholdHeight = (_maxHeight / _transformThreshold);
-    }
-    if (minTopThresholdHeight == 0.0) {
-      minTopThresholdHeight = -(_maxHeight / _transformThreshold);
-      topSearchPosition = ValueNotifier(minTopThresholdHeight);
-    }
+    informationPositionSearch ??= ValueNotifier(minThresholdHeight);
+
+    topSearchPosition ??= ValueNotifier(minTopThresholdHeight);
   }
 
   @override
@@ -107,7 +96,7 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
         children: [
           widget.map,
           ValueListenableBuilder<double>(
-            valueListenable: informationPositionSearch,
+            valueListenable: informationPositionSearch!,
             builder: (ctx, value, child) {
               return AnimatedPositioned(
                 top: value,
@@ -132,17 +121,17 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
                         if (lastY.value > y) {
                           diff = lastY.value - y;
                           directionNotifier.value = DIRECTION.up;
-                          if (informationPositionSearch.value > maxThresholdHeight) {
-                            informationPositionSearch.value -= diff;
-                            topSearchPosition.value += diff;
+                          if (informationPositionSearch!.value > maxThresholdHeight) {
+                            informationPositionSearch!.value -= diff;
+                            topSearchPosition!.value += diff;
                           }
                         }
                         if (lastY.value < y) {
                           diff = y - lastY.value;
                           directionNotifier.value = DIRECTION.down;
-                          if (informationPositionSearch.value <= minThresholdHeight) {
-                            informationPositionSearch.value += diff;
-                            topSearchPosition.value -= diff;
+                          if (informationPositionSearch!.value <= minThresholdHeight) {
+                            informationPositionSearch!.value += diff;
+                            topSearchPosition!.value -= diff;
                           }
                         }
                         if (lastY.value == y) {
@@ -150,7 +139,7 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
                         }
                         diffY.value = diff;
                         lastY.value = y;
-                        final vP = informationPositionSearch.value;
+                        final vP = informationPositionSearch!.value;
                         if (directionNotifier.value == DIRECTION.up &&
                             vP.toInt() <= maxThresholdHeight.toInt() &&
                             _scrollController.offset <
@@ -158,7 +147,8 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
                           _scrollController.jumpTo(_scrollController.offset - drag.delta.dy);
                         }
                         if (directionNotifier.value == DIRECTION.down &&
-                            informationPositionSearch.value.toInt() == minThresholdHeight.toInt() &&
+                            informationPositionSearch!.value.toInt() ==
+                                minThresholdHeight.toInt() &&
                             _scrollController.offset >
                                 (_scrollController.position.minScrollExtent - 100)) {
                           _scrollController.jumpTo(_scrollController.offset - drag.delta.dy);
@@ -168,18 +158,18 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
                   },
                   onVerticalDragEnd: (drag) {
                     var thresholdHeight = _maxHeight * 0.60;
-                    final currentPosition = informationPositionSearch.value;
+                    final currentPosition = informationPositionSearch!.value;
                     if (directionNotifier.value == DIRECTION.up) {
                       if (currentPosition - diffY.value <= thresholdHeight) {
-                        informationPositionSearch.value = maxThresholdHeight;
-                        topSearchPosition.value = 0;
+                        informationPositionSearch!.value = maxThresholdHeight;
+                        topSearchPosition!.value = 0;
                       }
                     }
                     if (directionNotifier.value == DIRECTION.down) {
                       thresholdHeight = _maxHeight * 0.60;
                       if (currentPosition + diffY.value <= thresholdHeight) {
-                        informationPositionSearch.value = minThresholdHeight;
-                        topSearchPosition.value = minTopThresholdHeight;
+                        informationPositionSearch!.value = minThresholdHeight;
+                        topSearchPosition!.value = minTopThresholdHeight;
                       }
                     }
                     isDown.value = false;
@@ -212,7 +202,7 @@ class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTicker
             },
           ),
           ValueListenableBuilder<double>(
-            valueListenable: topSearchPosition,
+            valueListenable: topSearchPosition!,
             builder: (ctx, value, child) {
               return AnimatedPositioned(
                 top: value,
