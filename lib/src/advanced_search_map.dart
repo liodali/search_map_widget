@@ -35,10 +35,10 @@ class AdvancedSearchMap extends StatefulWidget {
         super(key: key);
 
   @override
-  _AdvancedSearchMapState createState() => _AdvancedSearchMapState();
+  AdvancedSearchMapState createState() => AdvancedSearchMapState();
 }
 
-class _AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerProviderStateMixin {
+class AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerProviderStateMixin {
   final double positionTopSearch = 128.0;
   final double positionInformationSearch = 450.0;
   late ValueNotifier<bool> isDown;
