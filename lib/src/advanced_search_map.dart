@@ -1,6 +1,8 @@
+import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 
 import 'common/utils.dart';
+import 'controller/advanced_search_controller.dart';
 
 class AdvancedSearchMap extends StatefulWidget {
   final Widget map;
@@ -14,9 +16,10 @@ class AdvancedSearchMap extends StatefulWidget {
   final double topSearchRadius;
   final Color backgroundColorBottomSearchInformation;
   final Color backgroundColorTopSearchInformation;
-
+  final AdvancedSearchController controller;
   const AdvancedSearchMap({
     Key? key,
+    required this.controller,
     required this.map,
     required this.bottomSearchInformationWidget,
     required this.topSearchInformationWidget,
@@ -38,7 +41,8 @@ class AdvancedSearchMap extends StatefulWidget {
   AdvancedSearchMapState createState() => AdvancedSearchMapState();
 }
 
-class AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerProviderStateMixin {
+class AdvancedSearchMapState extends State<AdvancedSearchMap>
+    with SingleTickerProviderStateMixin, AfterLayoutMixin<AdvancedSearchMap> {
   final double positionTopSearch = 128.0;
   final double positionInformationSearch = 450.0;
   late ValueNotifier<bool> isDown;
@@ -47,7 +51,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerP
   late ValueNotifier<DIRECTION> directionNotifier;
   ValueNotifier<double>? topSearchPosition;
   ValueNotifier<double>? informationPositionSearch;
-
+  GlobalKey topKeyWidget = GlobalKey();
   late ScrollController _scrollController;
 
   double get maxThresholdHeight => _maxHeight - (_maxHeight * _maxThreshold);
@@ -56,7 +60,6 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerP
 
   double get maxTopThresholdHeight => (_maxHeight / _transformThreshold);
 
-  double get minTopThresholdHeight => -(_maxHeight / _transformThreshold);
 
   double get _maxHeight => MediaQuery.of(context).size.height;
 
@@ -66,10 +69,12 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerP
 
   double _maxThreshold = 0.85;
   double _minThreshold = 0.45;
+  late double  minTopThresholdHeight = -(_maxHeight / _transformThreshold);
 
   @override
   void initState() {
     super.initState();
+    widget.controller.init(this);
     _scrollController = ScrollController();
     diffY = ValueNotifier(0.0);
     lastY = ValueNotifier(0.0);
@@ -157,22 +162,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerP
                     }
                   },
                   onVerticalDragEnd: (drag) {
-                    var thresholdHeight = _maxHeight * 0.60;
-                    final currentPosition = informationPositionSearch!.value;
-                    if (directionNotifier.value == DIRECTION.up) {
-                      if (currentPosition - diffY.value <= thresholdHeight) {
-                        informationPositionSearch!.value = maxThresholdHeight;
-                        topSearchPosition!.value = 0;
-                      }
-                    }
-                    if (directionNotifier.value == DIRECTION.down) {
-                      thresholdHeight = _maxHeight * 0.60;
-                      if (currentPosition + diffY.value <= thresholdHeight) {
-                        informationPositionSearch!.value = minThresholdHeight;
-                        topSearchPosition!.value = minTopThresholdHeight;
-                      }
-                    }
-                    isDown.value = false;
+                    dragEnd();
                   },
                   child: AbsorbPointer(
                     child: Card(
@@ -215,6 +205,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerP
                   child: LayoutBuilder(
                     builder: (ctx, constraint) {
                       return Card(
+                        key: topKeyWidget,
                         color: widget.backgroundColorTopSearchInformation,
                         elevation: widget.topElevation,
                         margin: EdgeInsets.zero,
@@ -241,5 +232,54 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap> with SingleTickerP
         ],
       ),
     );
+  }
+
+  void dragEnd() {
+    var thresholdHeight = _maxHeight * 0.60;
+    final currentPosition = informationPositionSearch!.value;
+    if (directionNotifier.value == DIRECTION.up) {
+      if (currentPosition - diffY.value <= thresholdHeight) {
+        setInformationSearchToMaxPos();
+        setTopSearchToMaxPos();
+      } else {
+        setInformationSearchToMinPos();
+        setTopSearchToMinPos();
+      }
+    }
+    if (directionNotifier.value == DIRECTION.down) {
+      thresholdHeight = _maxHeight * 0.60;
+      if (currentPosition + diffY.value <= thresholdHeight) {
+        setInformationSearchToMinPos();
+        setTopSearchToMinPos();
+      } else {
+        setInformationSearchToMaxPos();
+        setTopSearchToMaxPos();
+      }
+    }
+    isDown.value = false;
+  }
+
+  void setInformationSearchToMinPos() {
+    informationPositionSearch!.value = minThresholdHeight;
+  }
+
+  void setInformationSearchToMaxPos() {
+    informationPositionSearch!.value = maxThresholdHeight;
+  }
+
+  void setTopSearchToMaxPos() {
+    topSearchPosition!.value = 0;
+  }
+
+  void setTopSearchToMinPos() {
+    topSearchPosition!.value = minTopThresholdHeight;
+  }
+
+  @override
+  void afterFirstLayout(BuildContext context) {
+    if (topKeyWidget.currentContext?.size?.height != null) {
+      minTopThresholdHeight = -topKeyWidget.currentContext!.size!.height;
+      topSearchPosition!.value = -topKeyWidget.currentContext!.size!.height;
+    }
   }
 }
