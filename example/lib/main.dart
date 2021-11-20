@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:map_search_widget/map_search_widget.dart';
 
 void main() {
@@ -31,11 +32,29 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  AdvancedSearchController controller = AdvancedSearchController();
+
   @override
   Widget build(BuildContext context) {
     return AdvancedSearchMap(
-      map: const Center(
-        child: Text("map"),
+      controller: controller,
+      // map: const Center(
+      //   child: Text("map"),
+      // ),
+      map: OSMFlutter(
+        controller: MapController(
+          initPosition: GeoPoint(
+            latitude: 47.4358055,
+            longitude: 8.4737324,
+          ),
+        ),
+        trackMyPosition: false,
+        initZoom: 12,
+        minZoomLevel: 8,
+        maxZoomLevel: 14,
+        stepZoom: 1.0,
+        showDefaultInfoWindow: false,
+        showZoomController: false,
       ),
       bottomSearchInformationWidget: ListView.builder(
         shrinkWrap: true,
@@ -58,7 +77,9 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Row(
               children: [
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    controller.close();
+                  },
                   child: const Icon(Icons.close),
                 ),
                 const Text("Search"),
