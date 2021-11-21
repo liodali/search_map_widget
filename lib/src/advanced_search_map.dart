@@ -300,11 +300,6 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
         setTopSearchToMaxPos();
       }
     }
-    normalizedScrolling.value = _normalizeInformationPositionSearch();
-    AdvancedSearchNotification(
-      metrics: normalizedScrolling.value,
-      context: context,
-    ).dispatch(context);
     isDown.value = false;
   }
 
@@ -336,7 +331,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
   void dispatchAdvSearchNotif() {
     normalizedScrolling.value = _normalizeInformationPositionSearch();
     AdvancedSearchNotification(
-      metrics: normalizedScrolling.value,
+      offset: normalizedScrolling.value,
       context: context,
     ).dispatch(context);
   }
