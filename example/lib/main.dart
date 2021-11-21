@@ -36,89 +36,90 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return AdvancedSearchMap(
-      controller: controller,
-      // map: const Center(
-      //   child: Text("map"),
-      // ),
-      map: OSMFlutter(
-        controller: MapController(
-          initPosition: GeoPoint(
-            latitude: 47.4358055,
-            longitude: 8.4737324,
+    return NotificationListener<AdvancedSearchNotification>(
+      onNotification: (notification){
+        print(notification.offset);
+        return true;
+      },
+      child: AdvancedSearchMap(
+        controller: controller,
+        // backgroundWidget: const Center(
+        //   child: Text("map"),
+        // ),
+        backgroundWidget: OSMFlutter(
+          controller: MapController(
+            initMapWithUserPosition: false,
+            initPosition: GeoPoint(
+              latitude: 47.4358055,
+              longitude: 8.4737324,
+            ),
           ),
+          trackMyPosition: false,
+          initZoom: 12,
+          minZoomLevel: 8,
+          maxZoomLevel: 14,
+          stepZoom: 1.0,
+          showDefaultInfoWindow: false,
+          showZoomController: false,
         ),
-        trackMyPosition: false,
-        initZoom: 12,
-        minZoomLevel: 8,
-        maxZoomLevel: 14,
-        stepZoom: 1.0,
-        showDefaultInfoWindow: false,
-        showZoomController: false,
-      ),
-      bottomSearchInformationWidget: ListView.builder(
-        shrinkWrap: true,
-        itemExtent: 50,
-        physics: const NeverScrollableScrollPhysics(),
-        itemBuilder: (ctx, index) {
-          return ListTile(
-            title: Text("item $index"),
-          );
-        },
-        itemCount: 20,
-      ),
-      topSearchInformationWidget: Column(
-        children: [
-          const SizedBox(
-            height: 32,
-          ),
-          SizedBox(
-            height: 56,
-            child: Row(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    controller.close();
-                  },
-                  child: const Icon(Icons.close),
-                ),
-                const Text("Search"),
-              ],
+        bottomSearchInformationWidget: ListView.builder(
+          shrinkWrap: true,
+          itemExtent: 50,
+          physics: const NeverScrollableScrollPhysics(),
+          itemBuilder: (ctx, index) {
+            return ListTile(
+              title: Text("item $index"),
+            );
+          },
+          itemCount: 20,
+        ),
+        topSearchInformationWidget: Column(
+          children: [
+            AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: TextButton(
+                onPressed: () {
+                  controller.close();
+                },
+                child: const Icon(Icons.close),
+              ),
+              title: const Text("Search"),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(
-              right: 16,
-            ),
-            child: Row(
-              children: [
-                const SizedBox(
-                  width: 96,
-                ),
-                Expanded(
-                  child: Column(
-                    children: const [
-                      TextField(
-                        decoration: InputDecoration(
-                          label: Text("start"),
-                        ),
-                      ),
-                      TextField(
-                        decoration: InputDecoration(
-                          label: Text("destination"),
-                        ),
-                      ),
-                    ],
+            Padding(
+              padding: const EdgeInsets.only(
+                right: 16,
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 96,
                   ),
-                ),
-              ],
-            ),
-          )
-        ],
+                  Expanded(
+                    child: Column(
+                      children: const [
+                        TextField(
+                          decoration: InputDecoration(
+                            label: Text("start"),
+                          ),
+                        ),
+                        TextField(
+                          decoration: InputDecoration(
+                            label: Text("destination"),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
+        bottomElevation: 8.0,
+        bottomSearchRadius: 24.0,
+        maxBottomSearchSize: 0.80,
       ),
-      bottomElevation: 8.0,
-      bottomSearchRadius: 24.0,
-      maxBottomSearchSize: 0.80,
     );
   }
 }
