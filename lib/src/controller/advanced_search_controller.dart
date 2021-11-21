@@ -1,5 +1,8 @@
 import '../advanced_search_map.dart';
-
+/// AdvancedSearchController
+/// this class is responsible to control [AdvancedSearchMap] by opened or closed programmatically,
+/// and give current status,
+/// this controller is required in [AdvancedSearchMap]
 class AdvancedSearchController {
   late AdvancedSearchMapState _advancedSearchMapState;
 
@@ -12,6 +15,8 @@ class AdvancedSearchController {
     _advancedSearchMapState.setInformationSearchToMaxPos();
     _advancedSearchMapState.setTopSearchToMaxPos();
   }
+
+  bool get isOpened => _advancedSearchMapState.isOpened();
 }
 
 extension PrivateExt on AdvancedSearchController {

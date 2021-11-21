@@ -1,5 +1,10 @@
 import 'package:flutter/widgets.dart';
-
+/// AdvancedSearchNotification
+/// widgets notify their ancestors when the size of
+/// the bottomInformationWidget in AdvancedSearchMap changes. When the extent of the SearchMap changes via a drag,
+/// this notification bubbles up through the tree, which means a given
+/// [NotificationListener] will receive notifications for all descendant
+/// [AdvancedSearchMap] widgets.
 class AdvancedSearchNotification extends Notification with ViewportNotificationMixin {
   /// Initializes fields for subclasses.
   AdvancedSearchNotification({
