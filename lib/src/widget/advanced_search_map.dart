@@ -1,9 +1,9 @@
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 
-import 'common/utils.dart';
-import 'controller/advanced_search_controller.dart';
-import 'notification/advanced_search_notification.dart';
+import '../common/utils.dart';
+import '../controller/advanced_search_controller.dart';
+import '../notification/advanced_search_notification.dart';
 
 class AdvancedSearchMap extends StatefulWidget {
   final Widget backgroundWidget;
