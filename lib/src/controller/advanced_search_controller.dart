@@ -1,4 +1,5 @@
 import '../widget/advanced_search_map.dart';
+
 /// AdvancedSearchController
 /// this class is responsible to control [AdvancedSearchMap] by opened or closed programmatically,
 /// and give current status,
@@ -15,6 +16,12 @@ class AdvancedSearchController {
     _advancedSearchMapState.setInformationSearchToMaxPos();
     _advancedSearchMapState.setTopSearchToMaxPos();
   }
+
+  void freezeScrollToMinSize() => _advancedSearchMapState.freezeScrollToMinSize();
+
+  void freeScroll() => _advancedSearchMapState.freeScroll();
+
+  void hideInformationWidget() {}
 
   bool get isOpened => _advancedSearchMapState.isOpened();
 }

@@ -33,12 +33,19 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   AdvancedSearchController controller = AdvancedSearchController();
+  MapController mapController = MapController(
+    initMapWithUserPosition: false,
+    initPosition: GeoPoint(
+      latitude: 47.4358055,
+      longitude: 8.4737324,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     return NotificationListener<AdvancedSearchNotification>(
-      onNotification: (notification){
-        print(notification.offset);
+      onNotification: (notification) {
+        //print(notification.offset);
         return true;
       },
       child: AdvancedSearchMap(
@@ -47,13 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
         //   child: Text("map"),
         // ),
         backgroundWidget: OSMFlutter(
-          controller: MapController(
-            initMapWithUserPosition: false,
-            initPosition: GeoPoint(
-              latitude: 47.4358055,
-              longitude: 8.4737324,
-            ),
-          ),
+          controller: mapController,
           trackMyPosition: false,
           initZoom: 12,
           minZoomLevel: 8,
@@ -73,53 +74,101 @@ class _MyHomePageState extends State<MyHomePage> {
           },
           itemCount: 20,
         ),
-        topSearchInformationWidget: Column(
-          children: [
-            AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              leading: TextButton(
-                onPressed: () {
-                  controller.close();
-                },
-                child: const Icon(Icons.close),
-              ),
-              title: const Text("Search"),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                right: 16,
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 96,
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: const [
-                        TextField(
-                          decoration: InputDecoration(
-                            label: Text("start"),
-                          ),
-                        ),
-                        TextField(
-                          decoration: InputDecoration(
-                            label: Text("destination"),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            )
-          ],
+        topSearchInformationWidget: TopSearchMap(
+          searchController: controller,
         ),
         bottomElevation: 8.0,
         bottomSearchRadius: 24.0,
         maxBottomSearchSize: 0.80,
       ),
+    );
+  }
+}
+
+class TopSearchMap extends StatefulWidget {
+  final AdvancedSearchController searchController;
+
+  const TopSearchMap({
+    Key? key,
+    required this.searchController,
+  }) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => _StateTopSearchMap();
+}
+
+class _StateTopSearchMap extends State<TopSearchMap> {
+  final ValueNotifier<bool> showApplyBt = ValueNotifier(false);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: TextButton(
+            onPressed: () {
+              widget.searchController.close();
+            },
+            child: const Icon(Icons.close),
+          ),
+          title: const Text("Search"),
+          actions: [
+            ValueListenableBuilder<bool>(
+              valueListenable: showApplyBt,
+              builder: (ctx, isVisible, child) {
+                if(isVisible){
+                  return child!;
+                }
+                return const SizedBox.shrink();
+              },
+              child: IconButton(
+                onPressed: () {
+                  widget.searchController.freezeScrollToMinSize();
+                },
+                icon: const Icon(
+                  Icons.done,
+                  color: Colors.green,
+                  size: 24,
+                ),
+              ),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(
+            right: 16,
+          ),
+          child: Row(
+            children: [
+              const SizedBox(
+                width: 96,
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    TextField(
+                      onChanged: (destination) {},
+                      decoration: const InputDecoration(
+                        label: Text("start"),
+                      ),
+                    ),
+                    TextField(
+                      onChanged: (destination) {
+                        showApplyBt.value = destination.isNotEmpty && destination.length > 4;
+                      },
+                      decoration: const InputDecoration(
+                        label: Text("destination"),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+      ],
     );
   }
 }

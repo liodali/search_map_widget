@@ -33,8 +33,7 @@ class AdvancedSearchMap extends StatefulWidget {
     this.topSearchRadius = 3.0,
     this.backgroundColorBottomSearchInformation = Colors.white,
     this.backgroundColorTopSearchInformation = Colors.white,
-  })
-      : assert(maxBottomSearchSize > 0.65),
+  })  : assert(maxBottomSearchSize > 0.65),
         assert(minBottomSearchSize >= 0.45 && minBottomSearchSize < 0.60),
         assert(bottomSearchRadius > 0.0),
         assert(topSearchRadius > 0.0),
@@ -58,17 +57,15 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
   GlobalKey topKeyWidget = GlobalKey();
   late ScrollController _scrollController;
 
+  var freezeScrollNotifier = ValueNotifier(false);
+
   double get maxThresholdHeight => _maxHeight - (_maxHeight * _maxThreshold);
 
   double get minThresholdHeight => _maxHeight - (_maxHeight * _minThreshold);
 
   double get maxTopThresholdHeight => (_maxHeight / _transformThreshold);
 
-  double get _maxHeight =>
-      MediaQuery
-          .of(context)
-          .size
-          .height;
+  double get _maxHeight => MediaQuery.of(context).size.height;
 
   double get _transformThreshold => (1 - _maxThreshold) * 10;
 
@@ -104,7 +101,6 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
     informationPositionSearch ??= ValueNotifier(minThresholdHeight);
 
     topSearchPosition ??= ValueNotifier(minTopThresholdHeight);
-    
   }
 
   @override
@@ -133,85 +129,103 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                   left: 0,
                   right: 0,
                   bottom: -5,
-                  child: GestureDetector(
-                    onVerticalDragStart: (drag) {
-                      lastY.value = drag.globalPosition.dy;
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: freezeScrollNotifier,
+                    builder: (ctx, freeze, child) {
+                      return AbsorbPointer(
+                        absorbing: freeze,
+                        child: child!,
+                      );
                     },
-                    onVerticalDragDown: (drag) {
-                      if (drag.localPosition.dy > 0) {
+                    child: GestureDetector(
+                      onVerticalDragStart: (drag) {
                         lastY.value = drag.globalPosition.dy;
-                      }
-                      isDown.value = true;
-                    },
-                    onVerticalDragUpdate: (drag) {
-                      if (isDown.value) {
-                        if (drag.globalPosition.dy > 0) {
-                          final y = drag.globalPosition.dy;
-                          var diff = 0.0;
-                          if (lastY.value > y) {
-                            diff = lastY.value - y;
-                            directionNotifier.value = DIRECTION.up;
-                            if (informationPositionSearch!.value > maxThresholdHeight) {
-                              informationPositionSearch!.value -= diff;
-                              topSearchPosition!.value += diff;
-                              switch (topSearchPosition!.value + diff < 0) {
-                                case true:
-                                  topSearchPosition!.value += diff;
-                                  break;
-                                default:
-                                  topSearchPosition!.value = 0;
+                      },
+                      onVerticalDragDown: (drag) {
+                        if (drag.localPosition.dy > 0) {
+                          lastY.value = drag.globalPosition.dy;
+                        }
+                        isDown.value = true;
+                      },
+                      onVerticalDragUpdate: (drag) {
+                        if (isDown.value) {
+                          if (drag.globalPosition.dy > 0) {
+                            final y = drag.globalPosition.dy;
+                            var diff = 0.0;
+                            if (lastY.value > y) {
+                              diff = lastY.value - y;
+                              print("diff up:$diff}");
+                              directionNotifier.value = DIRECTION.up;
+                              if (informationPositionSearch!.value > maxThresholdHeight) {
+                                informationPositionSearch!.value -= diff;
+                                topSearchPosition!.value += diff;
+                                switch (topSearchPosition!.value + diff < 0) {
+                                  case true:
+                                    var topDiff = diff;
+                                    if (topDiff > 6) {
+                                      topDiff -= topDiff/2;
+                                    }
+                                    topSearchPosition!.value += topDiff;
+                                    break;
+                                  default:
+                                    topSearchPosition!.value = 0;
+                                }
                               }
                             }
-                          }
-                          if (lastY.value < y) {
-                            diff = y - lastY.value;
-                            directionNotifier.value = DIRECTION.down;
-                            if (informationPositionSearch!.value <= minThresholdHeight) {
-                              informationPositionSearch!.value += diff;
-                              topSearchPosition!.value -= diff;
+                            if (lastY.value < y) {
+                              diff = y - lastY.value;
+                              print("diff down:$diff}");
+                              directionNotifier.value = DIRECTION.down;
+                              if (informationPositionSearch!.value <= minThresholdHeight) {
+                                informationPositionSearch!.value += diff;
+                                var topDiff = diff;
+                                if (diff > 6) {
+                                  topDiff += 3.0;
+                                }
+                                topSearchPosition!.value -= topDiff;
+                              }
+                            }
+                            if (lastY.value == y) {
+                              directionNotifier.value = DIRECTION.idle;
+                            }
+                            diffY.value = diff;
+                            lastY.value = y;
+                            final vP = informationPositionSearch!.value;
+                            if (directionNotifier.value == DIRECTION.up &&
+                                vP.toInt() <= maxThresholdHeight.toInt() &&
+                                _scrollController.offset <
+                                    (_scrollController.position.maxScrollExtent + 100)) {
+                              _scrollController.jumpTo(_scrollController.offset - drag.delta.dy);
+                            }
+                            if (directionNotifier.value == DIRECTION.down &&
+                                vP.toInt() >= minThresholdHeight.toInt() &&
+                                _scrollController.offset >
+                                    (_scrollController.position.minScrollExtent - 100)) {
+                              _scrollController.jumpTo(_scrollController.offset - drag.delta.dy);
                             }
                           }
-                          if (lastY.value == y) {
-                            directionNotifier.value = DIRECTION.idle;
-                          }
-                          diffY.value = diff;
-                          lastY.value = y;
-                          final vP = informationPositionSearch!.value;
-                          if (directionNotifier.value == DIRECTION.up &&
-                              vP.toInt() <= maxThresholdHeight.toInt() &&
-                              _scrollController.offset <
-                                  (_scrollController.position.maxScrollExtent + 100)) {
-                            _scrollController.jumpTo(_scrollController.offset - drag.delta.dy);
-                          }
-                          if (directionNotifier.value == DIRECTION.down &&
-                              vP.toInt() >=
-                                  minThresholdHeight.toInt() &&
-                              _scrollController.offset >
-                                  (_scrollController.position.minScrollExtent - 100)) {
-                            _scrollController.jumpTo(_scrollController.offset - drag.delta.dy);
-                          }
                         }
-                      }
-                    },
-                    onVerticalDragEnd: (drag) {
-                      dragEnd();
-                    },
-                    child: AbsorbPointer(
-                      child: Card(
-                        color: widget.backgroundColorBottomSearchInformation,
-                        elevation: widget.bottomElevation,
-                        margin: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(widget.bottomSearchRadius),
-                            topRight: Radius.circular(widget.bottomSearchRadius),
+                      },
+                      onVerticalDragEnd: (drag) {
+                        dragEnd();
+                      },
+                      child: AbsorbPointer(
+                        child: Card(
+                          color: widget.backgroundColorBottomSearchInformation,
+                          elevation: widget.bottomElevation,
+                          margin: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(widget.bottomSearchRadius),
+                              topRight: Radius.circular(widget.bottomSearchRadius),
+                            ),
                           ),
-                        ),
-                        child: SizedBox(
-                          child: SingleChildScrollView(
-                            physics: const NeverScrollableScrollPhysics(),
-                            controller: _scrollController,
-                            child: widget.bottomSearchInformationWidget,
+                          child: SizedBox(
+                            child: SingleChildScrollView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              controller: _scrollController,
+                              child: widget.bottomSearchInformationWidget,
+                            ),
                           ),
                         ),
                       ),
@@ -269,7 +283,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
 
   double _normalizeInformationPositionSearch() {
     var normalized = ((informationPositionSearch!.value - minThresholdHeight) /
-        (maxThresholdHeight - minThresholdHeight))
+            (maxThresholdHeight - minThresholdHeight))
         .abs();
     if (normalized > 1.0) {
       return 1.0;
@@ -338,5 +352,15 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
 
   bool isOpened() {
     return topSearchPosition!.value == 0;
+  }
+
+  void freezeScrollToMinSize() {
+    setTopSearchToMinPos();
+    setInformationSearchToMinPos();
+    freezeScrollNotifier.value = true;
+  }
+
+  void freeScroll() {
+    freezeScrollNotifier.value = false;
   }
 }
