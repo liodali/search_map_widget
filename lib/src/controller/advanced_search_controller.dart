@@ -21,7 +21,6 @@ class AdvancedSearchController {
 
   void freeScroll() => _advancedSearchMapState.freeScroll();
 
-  void hideInformationWidget() {}
 
   bool get isOpened => _advancedSearchMapState.isOpened();
 }
