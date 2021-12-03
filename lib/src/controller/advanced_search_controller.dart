@@ -21,6 +21,8 @@ class AdvancedSearchController {
 
   void freeScroll() => _advancedSearchMapState.freeScroll();
 
+  void hideTopCard() => _advancedSearchMapState.hideTopCard();
+  void showTopCard() => _advancedSearchMapState.showTopCard();
 
   bool get isOpened => _advancedSearchMapState.isOpened();
 }

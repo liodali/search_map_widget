@@ -59,6 +59,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
   late ScrollController _scrollController;
 
   var freezeScrollNotifier = ValueNotifier(false);
+  var hideTopCardNotifier = ValueNotifier(false);
 
   double get maxThresholdHeight => _maxHeight - (_maxHeight * _maxThreshold);
 
@@ -168,17 +169,18 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                                 directionNotifier.value = DIRECTION.up;
                                 if (informationPositionSearch!.value > maxThresholdHeight) {
                                   informationPositionSearch!.value -= diff;
-                                  topSearchPosition!.value += diff;
-                                  switch (topSearchPosition!.value + diff < 0) {
-                                    case true:
-                                      var topDiff = diff;
-                                      if (topDiff > 6) {
-                                        topDiff = topDiff / 2;
-                                      }
-                                      topSearchPosition!.value += topDiff;
-                                      break;
-                                    default:
-                                      topSearchPosition!.value = 0;
+                                  if (!hideTopCardNotifier.value) {
+                                    switch (topSearchPosition!.value + diff < 0) {
+                                      case true:
+                                        var topDiff = diff;
+                                        if (topDiff > 6) {
+                                          topDiff = topDiff / 2;
+                                        }
+                                        topSearchPosition!.value += topDiff;
+                                        break;
+                                      default:
+                                        topSearchPosition!.value = 0;
+                                    }
                                   }
                                 }
                               }
@@ -188,11 +190,13 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                                 directionNotifier.value = DIRECTION.down;
                                 if (informationPositionSearch!.value <= minThresholdHeight) {
                                   informationPositionSearch!.value += diff;
-                                  var topDiff = diff;
-                                  if (diff > 6) {
-                                    topDiff += 3.0;
+                                  if (!hideTopCardNotifier.value) {
+                                    var topDiff = diff;
+                                    if (diff > 6) {
+                                      topDiff += 3.0;
+                                    }
+                                    topSearchPosition!.value -= topDiff;
                                   }
-                                  topSearchPosition!.value -= topDiff;
                                 }
                               }
                               if (lastY.value == y) {
@@ -239,43 +243,54 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                 );
               },
             ),
-            ValueListenableBuilder<double>(
-              valueListenable: topSearchPosition!,
-              builder: (ctx, value, child) {
-                return AnimatedPositioned(
-                  top: value,
-                  left: 0,
-                  right: 0,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: _maxHeight / (_transformThreshold + _alphaThreshold),
-                    ),
-                    child: LayoutBuilder(
-                      builder: (ctx, constraint) {
-                        return Card(
-                          key: topKeyWidget,
-                          color: widget.backgroundColorTopSearchInformation,
-                          elevation: widget.topElevation,
-                          margin: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(widget.topSearchRadius),
-                              bottomRight: Radius.circular(widget.topSearchRadius),
-                            ),
-                          ),
-                          child: Container(
-                            constraints: constraint,
-                            child: widget.topSearchInformationWidget,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  duration: const Duration(
-                    milliseconds: 100,
-                  ),
+            ValueListenableBuilder<bool>(
+              valueListenable: hideTopCardNotifier,
+              builder: (ctx, hiding, child) {
+                return Visibility(
+                  visible: !hiding,
+                  maintainSize: true,
+                  maintainState: true,
+                  child: child!,
                 );
               },
+              child: ValueListenableBuilder<double>(
+                valueListenable: topSearchPosition!,
+                builder: (ctx, value, child) {
+                  return AnimatedPositioned(
+                    top: value,
+                    left: 0,
+                    right: 0,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: _maxHeight / (_transformThreshold + _alphaThreshold),
+                      ),
+                      child: LayoutBuilder(
+                        builder: (ctx, constraint) {
+                          return Card(
+                            key: topKeyWidget,
+                            color: widget.backgroundColorTopSearchInformation,
+                            elevation: widget.topElevation,
+                            margin: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(widget.topSearchRadius),
+                                bottomRight: Radius.circular(widget.topSearchRadius),
+                              ),
+                            ),
+                            child: Container(
+                              constraints: constraint,
+                              child: widget.topSearchInformationWidget,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    duration: const Duration(
+                      milliseconds: 100,
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -298,15 +313,19 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
     var thresholdHeight = _maxHeight * 0.60;
     final currentPosition = informationPositionSearch!.value;
     if (directionNotifier.value == DIRECTION.up) {
-      if (_maxHeight - currentPosition > thresholdHeight) {
-        setInformationSearchToMaxPos();
-        setTopSearchToMaxPos();
-      } else {
-        setInformationSearchToMinPos();
-        setTopSearchToMinPos();
+      switch (_maxHeight - currentPosition > thresholdHeight) {
+        case true:
+          setInformationSearchToMaxPos();
+          setTopSearchToMaxPos();
+          break;
+        default:
+          setInformationSearchToMinPos();
+          setTopSearchToMinPos();
       }
     }
     if (directionNotifier.value == DIRECTION.down) {
+      var thresholdHeight = _maxHeight * 0.70;
+
       if (_maxHeight - currentPosition <= thresholdHeight) {
         setInformationSearchToMinPos();
         setTopSearchToMinPos();
@@ -327,7 +346,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
   }
 
   void setTopSearchToMaxPos() {
-    topSearchPosition!.value = 0;
+    if (!hideTopCardNotifier.value) topSearchPosition!.value = 0;
   }
 
   void setTopSearchToMinPos() {
@@ -363,5 +382,14 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
 
   void freeScroll() {
     freezeScrollNotifier.value = false;
+  }
+
+  void hideTopCard() {
+    setTopSearchToMinPos();
+    hideTopCardNotifier.value = true;
+  }
+
+  void showTopCard() {
+    hideTopCardNotifier.value = false;
   }
 }
