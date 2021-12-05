@@ -1,6 +1,13 @@
+import 'package:example/src/home_vm.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:map_search_widget/map_search_widget.dart';
+import 'package:osm_nominatim/osm_nominatim.dart';
+import 'package:provider/provider.dart';
+
+import 'src/common/utils.dart';
+import 'src/widgets/bottom_search_map.dart';
+import 'src/widgets/top_search_map.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,33 +19,37 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+    return MultiProvider(
+        providers: [
+          ListenableProvider(
+            create: (ctx) => HomeVM(
+              maximumBottomPages: 2,
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+          ),
+          home: const MyHomePage(),
+        ));
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
+  const MyHomePage({
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with OSMMixinObserver {
   AdvancedSearchController controller = AdvancedSearchController();
   MapController mapController = MapController(
-    initMapWithUserPosition: false,
-    initPosition: GeoPoint(
-      latitude: 47.4358055,
-      longitude: 8.4737324,
-    ),
+    initMapWithUserPosition: true,
   );
 
   @override
@@ -48,127 +59,69 @@ class _MyHomePageState extends State<MyHomePage> {
         //print(notification.offset);
         return true;
       },
-      child: AdvancedSearchMap(
-        controller: controller,
-        // backgroundWidget: const Center(
-        //   child: Text("map"),
-        // ),
-        backgroundWidget: OSMFlutter(
-          controller: mapController,
-          trackMyPosition: false,
-          initZoom: 12,
-          minZoomLevel: 8,
-          maxZoomLevel: 14,
-          stepZoom: 1.0,
-          showDefaultInfoWindow: false,
-          showZoomController: false,
-        ),
-        bottomSearchInformationWidget: ListView.builder(
-          shrinkWrap: true,
-          itemExtent: 50,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (ctx, index) {
-            return ListTile(
-              title: Text("item $index"),
-            );
-          },
-          itemCount: 20,
-        ),
-        topSearchInformationWidget: TopSearchMap(
-          searchController: controller,
-        ),
-        bottomElevation: 8.0,
-        bottomSearchRadius: 24.0,
-        maxBottomSearchSize: 0.80,
-      ),
-    );
-  }
-}
-
-class TopSearchMap extends StatefulWidget {
-  final AdvancedSearchController searchController;
-
-  const TopSearchMap({
-    Key? key,
-    required this.searchController,
-  }) : super(key: key);
-
-  @override
-  State<StatefulWidget> createState() => _StateTopSearchMap();
-}
-
-class _StateTopSearchMap extends State<TopSearchMap> {
-  final ValueNotifier<bool> showApplyBt = ValueNotifier(false);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: TextButton(
-            onPressed: () {
-              widget.searchController.close();
-            },
-            child: const Icon(Icons.close),
-          ),
-          title: const Text("Search"),
-          actions: [
-            ValueListenableBuilder<bool>(
-              valueListenable: showApplyBt,
-              builder: (ctx, isVisible, child) {
-                if(isVisible){
-                  return child!;
-                }
-                return const SizedBox.shrink();
-              },
-              child: IconButton(
-                onPressed: () {
-                  widget.searchController.freezeScrollToMinSize();
-                },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: AdvancedSearchMap(
+          controller: controller,
+          backgroundWidget: OSMFlutter(
+            controller: mapController,
+            userLocationMarker: UserLocationMaker(
+              personMarker: MarkerIcon(
                 icon: const Icon(
-                  Icons.done,
+                  Icons.gps_fixed,
                   color: Colors.green,
-                  size: 24,
+                ),
+              ),
+              directionArrowMarker: MarkerIcon(
+                icon: const Icon(
+                  Icons.gps_fixed,
+                  color: Colors.green,
                 ),
               ),
             ),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.only(
-            right: 16,
-          ),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 96,
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    TextField(
-                      onChanged: (destination) {},
-                      decoration: const InputDecoration(
-                        label: Text("start"),
-                      ),
-                    ),
-                    TextField(
-                      onChanged: (destination) {
-                        showApplyBt.value = destination.isNotEmpty && destination.length > 4;
-                      },
-                      decoration: const InputDecoration(
-                        label: Text("destination"),
-                      ),
-                    ),
-                  ],
+            road: Road(
+                startIcon: MarkerIcon(
+                  icon: const Icon(
+                    Icons.home,
+                  ),
                 ),
-              ),
-            ],
+                endIcon: MarkerIcon(
+                  icon: const Icon(Icons.tour),
+                )),
+            trackMyPosition: false,
+            initZoom: 12,
+            minZoomLevel: 8,
+            maxZoomLevel: 14,
+            stepZoom: 1.0,
+            showDefaultInfoWindow: false,
+            showZoomController: false,
           ),
-        )
-      ],
+          bottomSearchInformationWidget: const BottomSearchMap(),
+          topSearchInformationWidget: TopSearchMap(
+            searchController: controller,
+          ),
+          bottomElevation: 8.0,
+          bottomSearchRadius: 24.0,
+          maxBottomSearchSize: 0.80,
+        ),
+      ),
     );
+  }
+
+  @override
+  Future<void> mapIsReady(bool isReady) async {
+    if (isReady) {
+      final homeVM = context.read<HomeVM>();
+      await mapController.currentLocation();
+      await mapController.enableTracking();
+      final myLocation = await mapController.myLocation();
+      final reverseSearchResult = await Nominatim.reverseSearch(
+        lat: myLocation.latitude,
+        lon: myLocation.longitude,
+        addressDetails: true,
+        nameDetails: true,
+      );
+      homeVM.setUserAdr(fromPlaceToAddress(reverseSearchResult));
+    }
   }
 }

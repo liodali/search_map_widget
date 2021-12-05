@@ -29,7 +29,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_osm_plugin: ^0.26.0-rc.2
+  flutter_osm_plugin: ^0.26.1
+  provider: ^6.0.1
+  osm_nominatim: ^2.0.1
   map_search_widget :
     path: ../
 
