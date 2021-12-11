@@ -17,11 +17,17 @@ class AdvancedSearchController {
     _advancedSearchMapState.setTopSearchToMaxPos();
   }
 
-  void freezeScrollToMinSize() => _advancedSearchMapState.freezeScrollToMinSize();
+  void freezeScrollToMinSize({double newBottomCardMinSize = 0}) =>
+      _advancedSearchMapState.freezeScrollToMinSize(
+        bottomNewMinSize: newBottomCardMinSize,
+      );
 
-  void freeScroll() => _advancedSearchMapState.freeScroll();
+  void freeScroll({bool returnOldMinSize = false}) => _advancedSearchMapState.freeScroll(
+        returnOldMinSize: returnOldMinSize,
+      );
 
   void hideTopCard() => _advancedSearchMapState.hideTopCard();
+
   void showTopCard() => _advancedSearchMapState.showTopCard();
 
   bool get isOpened => _advancedSearchMapState.isOpened();

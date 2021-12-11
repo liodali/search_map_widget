@@ -27,7 +27,7 @@ class AdvancedSearchMap extends StatefulWidget {
     required this.bottomSearchInformationWidget,
     required this.topSearchInformationWidget,
     this.maxBottomSearchSize = 0.75,
-    this.minBottomSearchSize = 0.45,
+    this.minBottomSearchSize = 0.35,
     this.bottomElevation = 2.0,
     this.topElevation = 2.0,
     this.bottomSearchRadius = 3.0,
@@ -35,7 +35,7 @@ class AdvancedSearchMap extends StatefulWidget {
     this.backgroundColorBottomSearchInformation = Colors.white,
     this.backgroundColorTopSearchInformation = Colors.white,
   })  : assert(maxBottomSearchSize > 0.65),
-        assert(minBottomSearchSize >= 0.45 && minBottomSearchSize < 0.60),
+        assert(minBottomSearchSize >= 0.35 && minBottomSearchSize < 0.60),
         assert(bottomSearchRadius > 0.0),
         assert(topSearchRadius > 0.0),
         super(key: key);
@@ -75,6 +75,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
 
   double _maxThreshold = 0.85;
   double _minThreshold = 0.45;
+  late double _cacheMinThreshold;
+
   late double minTopThresholdHeight = -(_maxHeight / _transformThreshold);
 
   @override
@@ -88,6 +90,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
     directionNotifier = ValueNotifier(DIRECTION.idle);
     _maxThreshold = widget.maxBottomSearchSize;
     _minThreshold = widget.minBottomSearchSize;
+    _cacheMinThreshold = _minThreshold;
   }
 
   @override
@@ -363,14 +366,26 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
     return topSearchPosition!.value == 0;
   }
 
-  void freezeScrollToMinSize() {
+  void freezeScrollToMinSize({double bottomNewMinSize = 0}) {
     setTopSearchToMinPos();
     setInformationSearchToMinPos();
     freezeScrollNotifier.value = true;
+    if (bottomNewMinSize > 0 && bottomNewMinSize != _minThreshold) {
+      setState(() {
+        _minThreshold = bottomNewMinSize;
+      });
+      informationPositionSearch!.value = _maxHeight - (_maxHeight * _minThreshold);
+    }
   }
 
-  void freeScroll() {
+  void freeScroll({bool returnOldMinSize = false}) {
     freezeScrollNotifier.value = false;
+    if (returnOldMinSize) {
+      setState(() {
+        _minThreshold = _cacheMinThreshold;
+      });
+      informationPositionSearch!.value = _maxHeight - (_maxHeight * _minThreshold);
+    }
   }
 
   void hideTopCard() {
