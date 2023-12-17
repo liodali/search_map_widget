@@ -49,7 +49,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> with OSMMixinObserver {
   AdvancedSearchController controller = AdvancedSearchController();
   MapController mapController = MapController(
-    initMapWithUserPosition: true,
+    initMapWithUserPosition:const UserTrackingOption(),
   );
 
   @override
@@ -65,36 +65,30 @@ class _MyHomePageState extends State<MyHomePage> with OSMMixinObserver {
           controller: controller,
           backgroundWidget: OSMFlutter(
             controller: mapController,
-            userLocationMarker: UserLocationMaker(
-              personMarker: MarkerIcon(
-                icon: const Icon(
-                  Icons.gps_fixed,
-                  color: Colors.green,
-                ),
-              ),
-              directionArrowMarker: MarkerIcon(
-                icon: const Icon(
-                  Icons.gps_fixed,
-                  color: Colors.green,
-                ),
-              ),
-            ),
-            road: Road(
-                startIcon: MarkerIcon(
-                  icon: const Icon(
-                    Icons.home,
+            osmOption: OSMOption(
+              userLocationMarker: UserLocationMaker(
+                personMarker: const MarkerIcon(
+                  icon: Icon(
+                    Icons.gps_fixed,
+                    color: Colors.green,
                   ),
                 ),
-                endIcon: MarkerIcon(
-                  icon: const Icon(Icons.tour),
-                )),
-            trackMyPosition: false,
-            initZoom: 12,
-            minZoomLevel: 8,
-            maxZoomLevel: 14,
-            stepZoom: 1.0,
-            showDefaultInfoWindow: false,
-            showZoomController: false,
+                directionArrowMarker: const MarkerIcon(
+                  icon: Icon(
+                    Icons.gps_fixed,
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+              zoomOption: const ZoomOption(
+                initZoom: 12,
+                minZoomLevel: 8,
+                maxZoomLevel: 14,
+                stepZoom: 1.0,
+              ),
+              showDefaultInfoWindow: false,
+              showZoomController: false,
+            ),
           ),
           bottomSearchInformationWidget: const BottomSearchMap(),
           topSearchInformationWidget: TopSearchMap(
