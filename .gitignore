@@ -76,3 +76,6 @@ build/
 /example/android/
 /example/ios/
 /example/web/
+/example/pubspec.lock
+/example/ios/Flutter/**
+*.lock
