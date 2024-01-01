@@ -20,20 +20,25 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-        providers: [
-          ListenableProvider(
-            create: (ctx) => HomeVM(
-              maximumBottomPages: 2,
-            ),
+      providers: [
+        ListenableProvider(
+          create: (ctx) => HomeVM(
+            maximumBottomPages: 2,
           ),
-        ],
+        ),
+      ],
+      child: GestureDetector(
+        onTap: () {},
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             primarySwatch: Colors.blue,
+            useMaterial3: true,
           ),
           home: const MyHomePage(),
-        ));
+        ),
+      ),
+    );
   }
 }
 
@@ -48,9 +53,21 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> with OSMMixinObserver {
   AdvancedSearchController controller = AdvancedSearchController();
-  MapController mapController = MapController(
-    initMapWithUserPosition:const UserTrackingOption(),
-  );
+  late MapController mapController;
+  @override
+  void initState() {
+    mapController = MapController(
+      initMapWithUserPosition: const UserTrackingOption(),
+    );
+    super.initState();
+    mapController.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    mapController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,8 +112,9 @@ class _MyHomePageState extends State<MyHomePage> with OSMMixinObserver {
             searchController: controller,
           ),
           bottomElevation: 8.0,
-          bottomSearchRadius: 24.0,
+          bottomSearchRadius: 12.0,
           maxBottomSearchSize: 0.80,
+          minBottomSearchSize: 0.05,
         ),
       ),
     );

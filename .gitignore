@@ -79,3 +79,4 @@ build/
 /example/pubspec.lock
 /example/ios/Flutter/**
 *.lock
+.vscode

@@ -54,36 +54,36 @@ class _StateTopSearchMap extends State<TopSearchMap> {
         ),
         Padding(
           padding: const EdgeInsets.only(
-            right: 16,
+            right: 24,
+            left: 72,
           ),
-          child: Row(
+          child: Column(
             children: [
-              const SizedBox(
-                width: 96,
+              TextField(
+                onChanged: (destination) {},
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  label: Text("start"),
+                  fillColor: Colors.white,
+                ),
               ),
-              Expanded(
-                child: Column(
-                  children: [
-                    TextField(
-                      onChanged: (destination) {},
-                      decoration: const InputDecoration(
-                        label: Text("start"),
-                      ),
-                    ),
-                    TextField(
-                      onChanged: (destination) {
-                        showApplyBt.value = destination.isNotEmpty && destination.length > 4;
-                      },
-                      decoration: const InputDecoration(
-                        label: Text("destination"),
-                      ),
-                    ),
-                  ],
+              const SizedBox(
+                height: 12,
+              ),
+              TextField(
+                onChanged: (destination) {
+                  showApplyBt.value =
+                      destination.isNotEmpty && destination.length > 4;
+                },
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  fillColor: Colors.white,
+                  label: Text("destination"),
                 ),
               ),
             ],
           ),
-        )
+        ),
       ],
     );
   }
