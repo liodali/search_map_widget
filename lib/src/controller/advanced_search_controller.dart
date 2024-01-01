@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import '../widget/advanced_search_map.dart';
 
 /// AdvancedSearchController
@@ -8,6 +10,13 @@ class AdvancedSearchController {
   late AdvancedSearchMapState _advancedSearchMapState;
 
   void close() {
+    if (_advancedSearchMapState.context.mounted) {
+      FocusScopeNode currentFocus =
+          FocusScope.of(_advancedSearchMapState.context);
+      if (currentFocus.hasFocus) {
+        currentFocus.unfocus();
+      }
+    }
     _advancedSearchMapState.setInformationSearchToMinPos();
     _advancedSearchMapState.setTopSearchToMinPos();
   }
@@ -22,7 +31,8 @@ class AdvancedSearchController {
         bottomNewMinSize: newBottomCardMinSize,
       );
 
-  void freeScroll({bool returnOldMinSize = false}) => _advancedSearchMapState.freeScroll(
+  void freeScroll({bool returnOldMinSize = false}) =>
+      _advancedSearchMapState.freeScroll(
         returnOldMinSize: returnOldMinSize,
       );
 

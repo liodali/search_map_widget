@@ -35,7 +35,7 @@ class AdvancedSearchMap extends StatefulWidget {
     this.backgroundColorBottomSearchInformation = Colors.white,
     this.backgroundColorTopSearchInformation = Colors.white,
   })  : assert(maxBottomSearchSize > 0.65),
-        assert(minBottomSearchSize >= 0.35 && minBottomSearchSize < 0.60),
+        //assert(minBottomSearchSize >= 0.35 && minBottomSearchSize < 0.60),
         assert(bottomSearchRadius > 0.0),
         assert(topSearchRadius > 0.0),
         super(key: key);
@@ -46,7 +46,7 @@ class AdvancedSearchMap extends StatefulWidget {
 
 class AdvancedSearchMapState extends State<AdvancedSearchMap>
     with SingleTickerProviderStateMixin, AfterLayoutMixin<AdvancedSearchMap> {
-  final double positionTopSearch = 128.0;
+  final double positionTopSearch = 156.0;
   final double positionInformationSearch = 450.0;
   late ValueNotifier<bool> isDown;
   late ValueNotifier<double> lastY;
@@ -71,7 +71,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
 
   double get _transformThreshold => (1 - _maxThreshold) * 10;
 
-  double get _alphaThreshold => _transformThreshold > 2 ? 0.0 : 3 - _transformThreshold;
+  double get _alphaThreshold =>
+      _transformThreshold > 2 ? 0.0 : 3 - _transformThreshold;
 
   double _maxThreshold = 0.85;
   double _minThreshold = 0.45;
@@ -132,7 +133,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                 builder: (ctx, freeze, child) {
                   if (freeze) {
                     return CoreCard(
-                      backgroundColor: widget.backgroundColorBottomSearchInformation,
+                      backgroundColor:
+                          widget.backgroundColorBottomSearchInformation,
                       elevation: widget.bottomElevation,
                       isScrollable: true,
                       scrollController: _scrollController,
@@ -163,7 +165,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                             /// if the value is inf from the threshold we remove the difference between (the first point drag and last point drag)
                             /// for bottom card and inverse happen for top card
                             directionNotifier.value = DIRECTION.up;
-                            if (informationPositionSearch!.value > maxThresholdHeight) {
+                            if (informationPositionSearch!.value >
+                                maxThresholdHeight) {
                               informationPositionSearch!.value -= diff;
                               if (!hideTopCardNotifier.value) {
                                 switch (topSearchPosition!.value + diff < 0) {
@@ -184,7 +187,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                             diff = y - lastY.value;
                             print("diff down:$diff}");
                             directionNotifier.value = DIRECTION.down;
-                            if (informationPositionSearch!.value <= minThresholdHeight) {
+                            if (informationPositionSearch!.value <=
+                                minThresholdHeight) {
                               informationPositionSearch!.value += diff;
                               if (!hideTopCardNotifier.value) {
                                 var topDiff = diff;
@@ -204,14 +208,18 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                           if (directionNotifier.value == DIRECTION.up &&
                               vP.toInt() <= maxThresholdHeight.toInt() &&
                               _scrollController.offset <
-                                  (_scrollController.position.maxScrollExtent + 100)) {
-                            _scrollController.jumpTo(_scrollController.offset - drag.delta.dy);
+                                  (_scrollController.position.maxScrollExtent +
+                                      100)) {
+                            _scrollController.jumpTo(
+                                _scrollController.offset - drag.delta.dy);
                           }
                           if (directionNotifier.value == DIRECTION.down &&
                               vP.toInt() >= minThresholdHeight.toInt() &&
                               _scrollController.offset >
-                                  (_scrollController.position.minScrollExtent - 100)) {
-                            _scrollController.jumpTo(_scrollController.offset - drag.delta.dy);
+                                  (_scrollController.position.minScrollExtent -
+                                      100)) {
+                            _scrollController.jumpTo(
+                                _scrollController.offset - drag.delta.dy);
                           }
                         }
                       }
@@ -224,7 +232,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                 },
                 child: AbsorbPointer(
                   child: CoreCard(
-                    backgroundColor: widget.backgroundColorBottomSearchInformation,
+                    backgroundColor:
+                        widget.backgroundColorBottomSearchInformation,
                     elevation: widget.bottomElevation,
                     isScrollable: false,
                     scrollController: _scrollController,
@@ -256,7 +265,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                 right: 0,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: _maxHeight / (_transformThreshold + _alphaThreshold),
+                    maxHeight:
+                        _maxHeight / (_transformThreshold + _alphaThreshold),
                   ),
                   child: LayoutBuilder(
                     builder: (ctx, constraint) {
@@ -268,7 +278,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
                             bottomLeft: Radius.circular(widget.topSearchRadius),
-                            bottomRight: Radius.circular(widget.topSearchRadius),
+                            bottomRight:
+                                Radius.circular(widget.topSearchRadius),
                           ),
                         ),
                         child: Container(
@@ -374,7 +385,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
       setState(() {
         _minThreshold = bottomNewMinSize;
       });
-      informationPositionSearch!.value = _maxHeight - (_maxHeight * _minThreshold);
+      informationPositionSearch!.value =
+          _maxHeight - (_maxHeight * _minThreshold);
     }
   }
 
@@ -384,7 +396,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
       setState(() {
         _minThreshold = _cacheMinThreshold;
       });
-      informationPositionSearch!.value = _maxHeight - (_maxHeight * _minThreshold);
+      informationPositionSearch!.value =
+          _maxHeight - (_maxHeight * _minThreshold);
     }
   }
 
