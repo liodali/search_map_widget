@@ -10,6 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   after_layout: ^1.2.0
+  pointer_interceptor: ^0.9.3+3
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
