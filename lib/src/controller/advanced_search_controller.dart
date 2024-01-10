@@ -26,21 +26,19 @@ class AdvancedSearchController {
     _advancedSearchMapState.setTopSearchToMaxPos();
   }
 
-  void freezeScrollToMinSize({double newBottomCardMinSize = 0}) =>
-      _advancedSearchMapState.freezeScrollToMinSize(
-        bottomNewMinSize: newBottomCardMinSize,
-      );
-
-  void freeScroll({bool returnOldMinSize = false}) =>
-      _advancedSearchMapState.freeScroll(
-        returnOldMinSize: returnOldMinSize,
-      );
+  void setMaxBottomWidgetSize(double size) {
+    _advancedSearchMapState.setSizeBottomCard(size);
+  }
 
   void hideTopCard() => _advancedSearchMapState.hideTopCard();
 
   void showTopCard() => _advancedSearchMapState.showTopCard();
+  void hideBottomCard() => _advancedSearchMapState.showTopCard();
+  void showBottomCard() => _advancedSearchMapState.showTopCard();
 
-  bool get isOpened => _advancedSearchMapState.isOpened();
+  bool get isOpened => _advancedSearchMapState.isOpened;
+
+  void reset() => _advancedSearchMapState.reset();
 }
 
 extension PrivateExt on AdvancedSearchController {

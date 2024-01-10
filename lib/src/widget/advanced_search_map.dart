@@ -1,10 +1,10 @@
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
-import '../common/utils.dart';
-import '../controller/advanced_search_controller.dart';
-import '../notification/advanced_search_notification.dart';
-import 'core_card.dart';
+import 'package:map_search_widget/src/common/utils.dart';
+import 'package:map_search_widget/src/controller/advanced_search_controller.dart';
+import 'package:map_search_widget/src/widget/core_card.dart';
 
 class AdvancedSearchMap extends StatefulWidget {
   final Widget backgroundWidget;
@@ -12,6 +12,7 @@ class AdvancedSearchMap extends StatefulWidget {
   final Widget topSearchInformationWidget;
   final double maxBottomSearchSize;
   final double minBottomSearchSize;
+  final double closeBottomSearchSize;
   final double bottomElevation;
   final double topElevation;
   final double bottomSearchRadius;
@@ -28,6 +29,7 @@ class AdvancedSearchMap extends StatefulWidget {
     required this.topSearchInformationWidget,
     this.maxBottomSearchSize = 0.75,
     this.minBottomSearchSize = 0.35,
+    this.closeBottomSearchSize = 0.25,
     this.bottomElevation = 2.0,
     this.topElevation = 2.0,
     this.bottomSearchRadius = 3.0,
@@ -52,11 +54,10 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
   late ValueNotifier<double> lastY;
   late ValueNotifier<double> diffY;
   late ValueNotifier<DIRECTION> directionNotifier;
-  ValueNotifier<double>? topSearchPosition;
-  ValueNotifier<double>? informationPositionSearch;
+  late ValueNotifier<double>? topSearchPosition =
+      ValueNotifier(minTopThresholdHeight);
   ValueNotifier<double> normalizedScrolling = ValueNotifier(0);
   GlobalKey topKeyWidget = GlobalKey();
-  late ScrollController _scrollController;
 
   var freezeScrollNotifier = ValueNotifier(false);
   var hideTopCardNotifier = ValueNotifier(false);
@@ -64,6 +65,8 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
   double get maxThresholdHeight => _maxHeight - (_maxHeight * _maxThreshold);
 
   double get minThresholdHeight => _maxHeight - (_maxHeight * _minThreshold);
+  double get minThresholdHeightToClose =>
+      _maxHeight - (_maxHeight * _minThresholdToClose);
 
   double get maxTopThresholdHeight => (_maxHeight / _transformThreshold);
 
@@ -76,37 +79,65 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
 
   double _maxThreshold = 0.85;
   double _minThreshold = 0.45;
-  late double _cacheMinThreshold;
+  late final _initMaxThreshold = widget.maxBottomSearchSize;
+  double _minThresholdToClose = 0.25;
 
   late double minTopThresholdHeight = -(_maxHeight / _transformThreshold);
-
+  late final draggableController = DraggableScrollableController();
+  late double currentHeight = _minThreshold;
+  bool stickToTop = false;
   @override
   void initState() {
     super.initState();
     widget.controller.init(this);
-    _scrollController = ScrollController();
     diffY = ValueNotifier(0.0);
     lastY = ValueNotifier(0.0);
     isDown = ValueNotifier(false);
-    directionNotifier = ValueNotifier(DIRECTION.idle);
     _maxThreshold = widget.maxBottomSearchSize;
     _minThreshold = widget.minBottomSearchSize;
-    _cacheMinThreshold = _minThreshold;
+    _minThresholdToClose = widget.closeBottomSearchSize;
+    currentHeight = _minThreshold;
+    draggableController.addListener(draggableListener);
+  }
+
+  void draggableListener() {
+    final fractionalSize =
+        draggableController.pixelsToSize(draggableController.pixels);
+    if (!stickToTop) {
+      if (fractionalSize >= _minThreshold &&
+          fractionalSize > currentHeight &&
+          (topSearchPosition != null && topSearchPosition!.value + 25 < 0)) {
+        topSearchPosition?.value += 25;
+      } else if (fractionalSize >= _minThreshold &&
+          fractionalSize < currentHeight) {
+        topSearchPosition?.value -= 25;
+      }
+      if (fractionalSize == _maxThreshold) {
+        topSearchPosition?.value = 0;
+      }
+      if (fractionalSize == _minThreshold) {
+        topSearchPosition?.value = -topKeyWidget.currentContext!.size!.height;
+      }
+      debugPrint("fraction : $fractionalSize, current $currentHeight");
+      if ((topSearchPosition != null && topSearchPosition!.value == 0)) {
+        setState(() {
+          _minThreshold = _maxThreshold;
+          stickToTop = true;
+        });
+      }
+      currentHeight = fractionalSize;
+    }
   }
 
   @override
   void dispose() {
-    informationPositionSearch!.removeListener(dispatchAdvSearchNotif);
+    draggableController.removeListener(draggableListener);
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    informationPositionSearch ??= ValueNotifier(minThresholdHeight);
-
-    topSearchPosition ??= ValueNotifier(minTopThresholdHeight);
   }
 
   @override
@@ -117,136 +148,29 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
           top: 0.0,
           left: 0,
           right: 0,
-          bottom: _minThreshold * _maxHeight - 56,
+          bottom: widget.minBottomSearchSize * _maxHeight - 56,
           child: widget.backgroundWidget,
         ),
-        ValueListenableBuilder<double>(
-          valueListenable: informationPositionSearch!,
-          builder: (ctx, value, child) {
-            return AnimatedPositioned(
-              top: value,
-              left: 0,
-              right: 0,
-              bottom: -5,
-              child: ValueListenableBuilder<bool>(
-                valueListenable: freezeScrollNotifier,
-                builder: (ctx, freeze, child) {
-                  if (freeze) {
-                    return CoreCard(
-                      backgroundColor:
-                          widget.backgroundColorBottomSearchInformation,
-                      elevation: widget.bottomElevation,
-                      isScrollable: true,
-                      scrollController: _scrollController,
-                      child: widget.bottomSearchInformationWidget,
-                      radius: widget.bottomSearchRadius,
-                    );
-                  }
-                  return GestureDetector(
-                    onVerticalDragStart: (drag) {
-                      lastY.value = drag.globalPosition.dy;
-                    },
-                    onVerticalDragDown: (drag) {
-                      if (drag.globalPosition.dy > 0) {
-                        lastY.value = drag.globalPosition.dy;
-                      }
-                      isDown.value = true;
-                    },
-                    onVerticalDragUpdate: (drag) {
-                      if (isDown.value) {
-                        if (drag.globalPosition.dy > 0) {
-                          final y = drag.globalPosition.dy;
-                          var diff = 0.0;
-                          if (lastY.value > y) {
-                            diff = lastY.value - y;
-
-                            /// calculation based on how much the value of [maxThresholdHeight] far from the top
-                            /// check value [informationPositionSearch] is sup than [maxThresholdHeight]
-                            /// if the value is inf from the threshold we remove the difference between (the first point drag and last point drag)
-                            /// for bottom card and inverse happen for top card
-                            directionNotifier.value = DIRECTION.up;
-                            if (informationPositionSearch!.value >
-                                maxThresholdHeight) {
-                              informationPositionSearch!.value -= diff;
-                              if (!hideTopCardNotifier.value) {
-                                switch (topSearchPosition!.value + diff < 0) {
-                                  case true:
-                                    var topDiff = diff;
-                                    if (topDiff > 6) {
-                                      topDiff = topDiff / 2;
-                                    }
-                                    topSearchPosition!.value += topDiff;
-                                    break;
-                                  default:
-                                    topSearchPosition!.value = 0;
-                                }
-                              }
-                            }
-                          }
-                          if (lastY.value < y) {
-                            diff = y - lastY.value;
-                            print("diff down:$diff}");
-                            directionNotifier.value = DIRECTION.down;
-                            if (informationPositionSearch!.value <=
-                                minThresholdHeight) {
-                              informationPositionSearch!.value += diff;
-                              if (!hideTopCardNotifier.value) {
-                                var topDiff = diff;
-                                if (diff > 6) {
-                                  topDiff += 3.0;
-                                }
-                                topSearchPosition!.value -= topDiff;
-                              }
-                            }
-                          }
-                          if (lastY.value == y) {
-                            directionNotifier.value = DIRECTION.idle;
-                          }
-                          diffY.value = diff;
-                          lastY.value = y;
-                          final vP = informationPositionSearch!.value;
-                          if (directionNotifier.value == DIRECTION.up &&
-                              vP.toInt() <= maxThresholdHeight.toInt() &&
-                              _scrollController.offset <
-                                  (_scrollController.position.maxScrollExtent +
-                                      100)) {
-                            _scrollController.jumpTo(
-                                _scrollController.offset - drag.delta.dy);
-                          }
-                          if (directionNotifier.value == DIRECTION.down &&
-                              vP.toInt() >= minThresholdHeight.toInt() &&
-                              _scrollController.offset >
-                                  (_scrollController.position.minScrollExtent -
-                                      100)) {
-                            _scrollController.jumpTo(
-                                _scrollController.offset - drag.delta.dy);
-                          }
-                        }
-                      }
-                    },
-                    onVerticalDragEnd: (drag) {
-                      dragEnd();
-                    },
-                    child: child!,
-                  );
-                },
-                child: AbsorbPointer(
-                  child: CoreCard(
-                    backgroundColor:
-                        widget.backgroundColorBottomSearchInformation,
-                    elevation: widget.bottomElevation,
-                    isScrollable: false,
-                    scrollController: _scrollController,
-                    child: widget.bottomSearchInformationWidget,
-                    radius: widget.bottomSearchRadius,
-                  ),
-                ),
-              ),
-              duration: const Duration(
-                milliseconds: 100,
-              ),
-            );
-          },
+        Positioned.fill(
+          child: PointerInterceptor(
+            child: DraggableScrollableSheet(
+              minChildSize: _minThreshold,
+              initialChildSize: _minThreshold,
+              maxChildSize: _maxThreshold,
+              controller: draggableController,
+              builder: (context, scrollController) {
+                return CoreCard(
+                  backgroundColor:
+                      widget.backgroundColorBottomSearchInformation,
+                  elevation: widget.bottomElevation,
+                  isScrollable: true,
+                  scrollController: scrollController,
+                  child: widget.bottomSearchInformationWidget,
+                  radius: widget.bottomSearchRadius,
+                );
+              },
+            ),
+          ),
         ),
         ValueListenableBuilder<bool>(
           valueListenable: hideTopCardNotifier,
@@ -265,8 +189,7 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
                 right: 0,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight:
-                        _maxHeight / (_transformThreshold + _alphaThreshold),
+                    maxHeight: (_maxHeight - _maxHeight * _maxThreshold) + 24,
                   ),
                   child: LayoutBuilder(
                     builder: (ctx, constraint) {
@@ -301,52 +224,21 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
     );
   }
 
-  double _normalizeInformationPositionSearch() {
-    var normalized = ((informationPositionSearch!.value - minThresholdHeight) /
-            (maxThresholdHeight - minThresholdHeight))
-        .abs();
-    if (normalized > 1.0) {
-      return 1.0;
-    }
-
-    return normalized;
-  }
-
-  void dragEnd() {
-    var thresholdHeight = _maxHeight * 0.60;
-    final currentPosition = informationPositionSearch!.value;
-    if (directionNotifier.value == DIRECTION.up) {
-      switch (_maxHeight - currentPosition > thresholdHeight) {
-        case true:
-          setInformationSearchToMaxPos();
-          setTopSearchToMaxPos();
-          break;
-        default:
-          setInformationSearchToMinPos();
-          setTopSearchToMinPos();
-      }
-    }
-    if (directionNotifier.value == DIRECTION.down) {
-      var thresholdHeight = _maxHeight * 0.70;
-
-      if (_maxHeight - currentPosition <= thresholdHeight) {
-        setInformationSearchToMinPos();
-        setTopSearchToMinPos();
-      } else {
-        setInformationSearchToMaxPos();
-        setTopSearchToMaxPos();
-      }
-    }
-    isDown.value = false;
-  }
-
   void setInformationSearchToMinPos() {
-    informationPositionSearch!.value = minThresholdHeight;
+    setState(() {
+      _minThreshold = widget.minBottomSearchSize;
+      stickToTop = false;
+    });
+    Future.delayed(const Duration(milliseconds: 200), () {
+      draggableController.animateTo(
+        _minThreshold,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.linear,
+      );
+    });
   }
 
-  void setInformationSearchToMaxPos() {
-    informationPositionSearch!.value = maxThresholdHeight;
-  }
+  void setInformationSearchToMaxPos() {}
 
   void setTopSearchToMaxPos() {
     if (!hideTopCardNotifier.value) topSearchPosition!.value = 0;
@@ -362,43 +254,34 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
       minTopThresholdHeight = -topKeyWidget.currentContext!.size!.height;
       topSearchPosition!.value = -topKeyWidget.currentContext!.size!.height;
     }
-    informationPositionSearch!.addListener(dispatchAdvSearchNotif);
   }
 
-  void dispatchAdvSearchNotif() {
-    normalizedScrolling.value = _normalizeInformationPositionSearch();
-    AdvancedSearchNotification(
-      offset: normalizedScrolling.value,
-      context: context,
-    ).dispatch(context);
-  }
+  bool get isOpened => topSearchPosition!.value == 0;
 
-  bool isOpened() {
-    return topSearchPosition!.value == 0;
-  }
-
-  void freezeScrollToMinSize({double bottomNewMinSize = 0}) {
-    setTopSearchToMinPos();
+  void reset() {
+    topSearchPosition!.value = -topKeyWidget.currentContext!.size!.height;
     setInformationSearchToMinPos();
-    freezeScrollNotifier.value = true;
-    if (bottomNewMinSize > 0 && bottomNewMinSize != _minThreshold) {
-      setState(() {
-        _minThreshold = bottomNewMinSize;
-      });
-      informationPositionSearch!.value =
-          _maxHeight - (_maxHeight * _minThreshold);
-    }
+    setTopSearchToMinPos();
+    setState(() {
+      _maxThreshold = _initMaxThreshold;
+    });
   }
 
-  void freeScroll({bool returnOldMinSize = false}) {
-    freezeScrollNotifier.value = false;
-    if (returnOldMinSize) {
+  void setSizeBottomCard(double size) {
+    assert(size >= widget.minBottomSearchSize &&
+        size <= widget.maxBottomSearchSize);
+
+    Future.microtask(() async {
+      await draggableController.animateTo(
+        _maxThreshold,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.linear,
+      );
       setState(() {
-        _minThreshold = _cacheMinThreshold;
+        _maxThreshold = size;
+        _minThreshold = size;
       });
-      informationPositionSearch!.value =
-          _maxHeight - (_maxHeight * _minThreshold);
-    }
+    });
   }
 
   void hideTopCard() {
@@ -408,5 +291,22 @@ class AdvancedSearchMapState extends State<AdvancedSearchMap>
 
   void showTopCard() {
     hideTopCardNotifier.value = false;
+  }
+
+  void hideBottomCard() {
+    setState(() {
+      _minThreshold = 0;
+    });
+    (() => draggableController.animateTo(
+          0,
+          duration: Duration.zero,
+          curve: Curves.linear,
+        )).delayed(Duration.zero);
+  }
+
+  void showBottomCard() {
+    setState(() {
+      _minThreshold = widget.minBottomSearchSize;
+    });
   }
 }
